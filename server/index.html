@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Neural Network Prediction Visualizer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #111125;
+            --accent-primary: #1a2980;
+            --accent-secondary: #26d0ce;
+            --gradient-primary: linear-gradient(45deg, #1a2980, #26d0ce);
+            --gradient-secondary: linear-gradient(135deg, #26d0ce, #1a2980);
+            --text-primary: #e0e0ff;
+            --connection-color: rgba(38, 208, 206, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            perspective: 2000px;
+        }
+
+        .neural-network-container {
+            width: 95vw;
+            max-width: 1600px;
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            box-shadow:
+                0 50px 100px rgba(26, 41, 128, 0.3),
+                0 15px 40px rgba(38, 208, 206, 0.2);
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            transform: rotateX(10deg) rotateY(-5deg);
+        }
+
+        .background-glow {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center,
+                    rgba(38, 208, 206, 0.1),
+                    rgba(26, 41, 128, 0.05) 50%,
+                    transparent 70%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        #input-text {
+            flex-grow: 1;
+            background: rgba(26, 41, 128, 0.3);
+            border: 2px solid var(--accent-secondary);
+            color: var(--text-primary);
+            padding: 1rem;
+            border-radius: 10px;
+            font-family: 'Space Grotesk', monospace;
+            transition: all 0.3s ease;
+        }
+
+        #input-text:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(38, 208, 206, 0.3);
+        }
+
+        #simulate-btn {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #simulate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-secondary);
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        #simulate-btn:hover::before {
+            left: 0;
+        }
+
+        .neural-network-grid {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: rgba(26, 41, 128, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        .network-layer {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            align-items: center;
+            transition: all 0.5s ease;
+        }
+
+        .neuron {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(38, 208, 206, 0.2);
+            position: relative;
+            z-index: 10;
+            transition: all 0.3s ease;
+            box-shadow:
+                0 0 10px rgba(38, 208, 206, 0.1),
+                inset 0 0 15px rgba(38, 208, 206, 0.2);
+        }
+
+        .neuron.active {
+            background: var(--accent-secondary);
+            transform: scale(1.2);
+            box-shadow:
+                0 0 30px var(--accent-secondary),
+                inset 0 0 20px var(--accent-secondary);
+        }
+
+        .connection {
+            position: absolute;
+            background: var(--connection-color);
+            transition: all 0.5s ease;
+            z-index: 1;
+            opacity: 0.5;
+            border-radius: 5px;
+        }
+
+        .connection.active {
+            background: var(--accent-secondary);
+            opacity: 1;
+        }
+
+        .token-display {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+        }
+
+        .token {
+            background: rgba(38, 208, 206, 0.1);
+            color: var(--accent-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            border: 1px solid var(--accent-secondary);
+        }
+
+        .prediction-output {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 1.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="neural-network-container">
+        <div class="background-glow"></div>
+        <div class="input-section">
+            <input type="text" id="input-text" placeholder="Enter text to predict next word...">
+            <button id="simulate-btn">Simulate Network</button>
+        </div>
+        <div class="token-display" id="token-display"></div>
+        <div class="neural-network-grid" id="neural-network"></div>
+        <div class="prediction-output" id="prediction-output"></div>
+    </div>
+
+    <script>
+        class EpicNeuralNetworkSimulator {
+            constructor() {
+                this.networkArchitecture = [
+                    { neurons: 24, type: 'input' },
+                    { neurons: 48, type: 'hidden' },
+                    { neurons: 96, type: 'hidden' },
+                    { neurons: 48, type: 'hidden' },
+                    { neurons: 24, type: 'output' }
+                ];
+                this.vocabulary = new Map();
+                this.tokenToId = new Map();
+            }
+
+            tokenize(text) {
+                return text.toLowerCase()
+                    .replace(/[^\w\s]/g, '')
+                    .split(/\s+/)
+                    .map(token => {
+                        return token.split('').map(char =>
+                            char.charCodeAt(0) - 96
+                        ).join('').padStart(4, '0');
+                    });
+            }
+
+            encodeTokens(tokens) {
+                return tokens.map(token => {
+                    if (!this.tokenToId.has(token)) {
+                        const id = this.tokenToId.size;
+                        this.tokenToId.set(token, id);
+                        this.vocabulary.set(id, token);
+                    }
+                    return this.tokenToId.get(token);
+                });
+            }
+
+            simulateNeuralNetworkProcessing(tokenIds) {
+                const layerActivations = this.networkArchitecture.map(layer =>
+                    Array(layer.neurons).fill(0).map(() => Math.random())
+                );
+
+                for (let i = 1; i < layerActivations.length; i++) {
+                    layerActivations[i] = layerActivations[i].map(() =>
+                        Math.random() > 0.6 ? 1 : 0
+                    );
+                }
+
+                return layerActivations;
+            }
+
+            predictNextWord(tokenIds) {
+                const activations = this.simulateNeuralNetworkProcessing(tokenIds);
+                const outputLayer = activations[activations.length - 1];
+
+                const topNeurons = outputLayer
+                    .map((activation, index) => ({ activation, index }))
+                    .sort((a, b) => b.activation - a.activation)
+                    .slice(0, 3);
+
+                const lastTokenId = tokenIds[tokenIds.length - 1];
+                const candidateWords = Array.from(this.vocabulary.values())
+                    .filter(word => word !== this.vocabulary.get(lastTokenId))
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 3);
+
+                return candidateWords[0];
+            }
+
+            visualizeNeuralNetwork(activations) {
+                const networkContainer = document.getElementById('neural-network');
+                networkContainer.innerHTML = '';
+
+                const containerWidth = networkContainer.clientWidth;
+                const containerHeight = networkContainer.clientHeight;
+                const layerWidth = containerWidth / (this.networkArchitecture.length + 1);
+
+                this.networkArchitecture.forEach((layer, layerIndex) => {
+                    const layerElement = document.createElement('div');
+                    layerElement.classList.add('network-layer');
+                    layerElement.style.left = `${layerIndex * layerWidth}px`;
+                    layerElement.style.width = `${layerWidth}px`;
+
+                    const neurons = [];
+                    for (let i = 0; i < layer.neurons; i++) {
+                        const neuron = document.createElement('div');
+                        neuron.classList.add('neuron');
+
+                        if (activations[layerIndex][i] > 0.6) {
+                            neuron.classList.add('active');
+                        }
+
+                        layerElement.appendChild(neuron);
+                        neurons.push(neuron);
+                    }
+
+                    if (layerIndex < this.networkArchitecture.length - 1) {
+                        const nextLayerNeurons = networkContainer.children[layerIndex + 1]?.children || [];
+
+                        neurons.forEach((neuron, neuronIndex) => {
+                            nextLayerNeurons.forEach((nextNeuron, nextNeuronIndex) => {
+                                const connection = document.createElement('div');
+                                connection.classList.add('connection');
+
+                                const neuronRect = neuron.getBoundingClientRect();
+                                const nextNeuronRect = nextNeuron.getBoundingClientRect();
+
+                                const startX = neuronRect.left + neuronRect.width / 2;
+                                const startY = neuronRect.top + neuronRect.height / 2;
+                                const endX = nextNeuronRect.left + nextNeuronRect.width / 2;
+                                const endY = nextNeuronRect.top + nextNeuronRect.height / 2;
+
+                                const length = Math.sqrt(
+                                    Math.pow(endX - startX, 2) +
+                                    Math.pow(endY - startY, 2)
+                                );
+                                const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+
+                                connection.style.width = `${length}px`;
+                                connection.style.transform = `rotate(${angle}deg)`;
+                                connection.style.left = `${startX}px`;
+                                connection.style.top = `${startY}px`;
+
+                                if (neuron.classList.contains('active') && nextNeuron.classList.contains('active')) {
+                                    connection.classList.add('active');
+                                }
+
+                                networkContainer.appendChild(connection);
+                            });
+                        });
+                    }
+
+                    networkContainer.appendChild(layerElement);
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const simulator = new EpicNeuralNetworkSimulator();
+            const inputText = document.getElementById('input-text');
+            const simulateBtn = document.getElementById('simulate-btn');
+            const tokenDisplay = document.getElementById('token-display');
+            const predictionOutput = document.getElementById('prediction-output');
+
+            simulateBtn.addEventListener('click', () => {
+                const text = inputText.value;
+                const tokens = simulator.tokenize(text);
+                const tokenIds = simulator.encodeTokens(tokens);
+
+                tokenDisplay.innerHTML = tokens.map(token =>
+                    `<span class="token">${token}</span>`
+                ).join('');
+
+                const activations = simulator.simulateNeuralNetworkProcessing(tokenIds);
+                simulator.visualizeNeuralNetwork(activations);
+
+                const predictedWord = simulator.predictNextWord(tokenIds);
+                predictionOutput.innerHTML = `Predicted Next Word: ${predictedWord}`;
+            });
+        });
+    </script>
+</body>
+
+</html>
