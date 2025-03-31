@@ -4,7 +4,7 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 // Replace with Google Gemini
 const model = new ChatGoogleGenerativeAI({
     model: 'gemini-2.0-flash', // Use the appropriate Gemini model
-    apiKey: 'AIzaSyC1KCluFoXHGcF9Q_mJgMtN136r2Xt8lP8', // You'll need a Google API key
+    // apiKey: 'AIzaSyC1KCluFoXHGcF9Q_mJgMtN136r2Xt8lP8', // You'll need a Google API key
 });
 
 const agent = createReactAgent({
