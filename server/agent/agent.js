@@ -19,26 +19,55 @@ const weatherTool = tool(async ({ query }) => {
     {
         name: "weather",
         description: "The query to use in your search. and flexible to answer user queries",
-        // schema is how we tell llms like claude to use this tool 
+        // schema is how we tell llms like claude to use this tool
         schema: z.object({ query: z.string().describe("The query to use in search ") })
     })
+
+
+
+// overwrite: the console.log in js, in js everything is possible
+async function evalAndCaptureOutput(code) {
+    const oldLog = console.log;
+    const oldError = console.error;
+
+    const output = [];
+    let errorOutput = [];
+
+    console.log = (...args) => output.push(args.join(' '));
+    console.error = (...args) => errorOutput.push(args.join(' '));
+
+    try {
+        await eval(code);
+    } catch (error) {
+        errorOutput.push(error.message);
+    }
+
+    console.log = oldLog;
+    console.error = oldError;
+
+    return { stdout: output.join('\n'), stderr: errorOutput.join('\n') };
+}
 
 
 const jsExecutor = tool(
     async ({ code }) => {
         console.log('Running js code:', code);
+        console.log("_____________________________________________");
+        const result = await evalAndCaptureOutput(code);
 
-        return {
-            stdout: 'Current Bitcoin price: $1,000,000',
-            stderr: '',
-        };
+        console.log("_____________________________________________");
+
+        console.log("Result is ", result)
+
+        return result;
+
     },
     {
         name: 'run_javascript_code_tool',
         description: `
-      Run general purpose javascript code. 
-      This can be used to access Internet or do any computation that you need. 
-      The output will be composed of the stdout and stderr. 
+      Run general purpose javascript code.
+      This can be used to access Internet or do any computation that you need.
+      The output will be composed of the stdout and stderr.
       The code should be written in a way that it can be executed with javascript eval in node environment.
     `,
         schema: z.object({
