@@ -31,7 +31,7 @@ const model = new ChatGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_API_KEY, // You'll need a Google API key
 });
 
-const agent = createReactAgent({
+export const agent = createReactAgent({
     llm: model,
     tools: [weatherTool],
     checkpointSaver, // <- Give the memory saver to our agent
