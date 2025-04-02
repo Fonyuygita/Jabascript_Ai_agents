@@ -51,16 +51,17 @@ async function evalAndCaptureOutput(code) {
 
 const jsExecutor = tool(
     async ({ code }) => {
-        console.log('Running js code:', code);
-        console.log("_____________________________________________");
-        const result = await evalAndCaptureOutput(code);
+        const response = await fetch(`${process.env.EXECUTOR_URL}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ code }),
+        });
 
-        console.log("_____________________________________________");
-
-        console.log("Result is ", result)
+        const result = await response.json();
 
         return result;
-
     },
     {
         name: 'run_javascript_code_tool',
